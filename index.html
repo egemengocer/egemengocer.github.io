@@ -88,6 +88,8 @@ section { padding-block: 56px; border-top: 1px solid var(--line); }
 .card p { margin: 6px 0 0; color: var(--muted); font-size: 15px; max-width: 52ch; }
 
 
+.lang { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; background: none; color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; margin-left: 4px; }
+.lang:hover { border-color: var(--fg); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
 .chip { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; background: none; color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
 .chip span { color: var(--muted); margin-left: 4px; }
@@ -164,6 +166,7 @@ footer { padding-block: 28px 40px; color: var(--muted); font-size: 13px; border-
       <a href="#ogrenci">Okul projeleri</a>
       <a href="#ek">Ek projeler</a>
       <a href="#iletisim">İletişim</a>
+      <button type="button" class="lang" id="langBtn" aria-label="Language / Dil">EN</button>
     </nav>
   </header>
 
@@ -375,10 +378,10 @@ function build(list, el, base) {
   el.innerHTML = list.map(function (p, i0) {
     var i = base ? WORK.indexOf(p) : i0;
     return '<button class="card" type="button" data-set="' + (base ? 'work' : el.id) + '" data-i="' + i + '" data-cat="' + (p.cat || '') + '">' +
-      '<div class="thumb"><img src="' + p.imgs[0][0] + '" alt="' + esc(p.name) + ' kapak görseli" loading="lazy" width="1400" height="738">' +
-      '<span class="count">' + p.imgs.length + ' GÖRSEL</span></div>' +
-      '<div class="meta"><h3>' + esc(base === 2 ? p.tags.split(' · ')[0] : p.name) + '</h3><span class="tags">' + esc(base === 2 ? p.tags.split(' · ').slice(1).join(' · ') : p.tags) + '</span></div>' +
-      '<p>' + esc(p.desc) + '</p></button>';
+      '<div class="thumb"><img src="' + p.imgs[0][0] + '" alt="' + esc(p.name) + ' ' + UI('cover') + '" loading="lazy" width="1400" height="738">' +
+      '<span class="count">' + p.imgs.length + ' ' + UI('img') + '</span></div>' +
+      '<div class="meta"><h3>' + esc(base === 2 ? tTag(p.tags).split(' · ')[0] : p.name) + '</h3><span class="tags">' + esc(base === 2 ? tTag(p.tags).split(' · ').slice(1).join(' · ') : tTag(p.tags)) + '</span></div>' +
+      '<p>' + esc(tDesc(p.desc)) + '</p></button>';
   }).join('');
 }
 build(WORK.filter(function (w) { return w.feat; }), document.getElementById('work'), 1);
@@ -395,7 +398,7 @@ function brandWorks(n) {
 var catsEl = document.getElementById('cats');
 catsEl.innerHTML = BRANDS.map(function (n) {
   var l = brandWorks(n), k = l.reduce(function (s, w) { return s + w.imgs.length; }, 0);
-  return '<button type="button" class="cat" data-c="' + encodeURIComponent(n) + '"><img src="' + l[0].imgs[0][0] + '" alt="" loading="lazy"><span class="t"><b>' + esc(n) + '</b><span>' + k + ' GÖRSEL</span></span></button>';
+  return '<button type="button" class="cat" data-c="' + encodeURIComponent(n) + '"><img src="' + l[0].imgs[0][0] + '" alt="" loading="lazy"><span class="t"><b>' + esc(n) + '</b><span>' + k + ' ' + UI('img') + '</span></span></button>';
 }).join('');
 var homeEl = document.getElementById('home'), cvWrap = document.getElementById('catview');
 function route() {
@@ -405,7 +408,7 @@ function route() {
   var list = brandWorks(n);
   build(list, document.getElementById('cv'), 2);
   document.getElementById('cvTitle').textContent = n;
-  document.getElementById('cvCount').textContent = list.length + ' stand tipi';
+  document.getElementById('cvCount').textContent = list.length + ' ' + UI('types');
   homeEl.hidden = true; cvWrap.hidden = false;
   document.getElementById('isler').scrollIntoView();
 }
@@ -418,9 +421,9 @@ var lb = document.getElementById('lb'), lbImg = document.getElementById('lbImg')
 var cur = null, idx = 0, opener = null;
 function show() {
   var im = cur.imgs[idx];
-  lbImg.src = im[0]; lbImg.alt = cur.name + ': ' + im[1];
+  lbImg.src = im[0]; lbImg.alt = cur.name + ': ' + tCap(im[1]);
   document.getElementById('lbTitle').textContent = cur.name;
-  document.getElementById('lbCap').textContent = im[1];
+  document.getElementById('lbCap').textContent = tCap(im[1]);
   document.getElementById('lbCount').textContent = (idx + 1) + ' / ' + cur.imgs.length;
   var multi = cur.imgs.length > 1;
   document.getElementById('lbPrev').hidden = !multi; document.getElementById('lbNext').hidden = !multi;
@@ -448,11 +451,63 @@ lb.addEventListener('touchend', function (e) { if (sx === null) return; var dx =
 document.querySelectorAll('.copy').forEach(function (b) {
   b.addEventListener('click', function () {
     var node = document.getElementById(b.getAttribute('data-copy'));
-    var done = function () { b.textContent = 'Kopyalandı'; setTimeout(function () { b.textContent = 'Kopyala'; }, 1600); };
+    var done = function () { b.textContent = UI('copied'); setTimeout(function () { b.textContent = UI('copy'); }, 1600); };
     var sel = function () { var r = document.createRange(); r.selectNodeContents(node); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
     try { navigator.clipboard.writeText(node.textContent).then(done, sel); } catch (err) { sel(); }
   });
 });
+
+var LANG = 'tr';
+var EN_STR = {"Deneyim": "Experience", "Yetkinlikler": "Skills", "Seçili işler": "Selected work", "Okul projeleri": "School projects", "Ek projeler": "Side projects", "İletişim": "Contact", "Endüstriyel tasarımcı · POSM ve retail display · İstanbul": "Industrial designer · POSM and retail display · Istanbul", "Portfolyosu": "Portfolio", "TEM 2025 – GÜNÜMÜZ": "JUL 2025 – PRESENT", "Endüstriyel Tasarımcı · LeviDisplay": "Industrial Designer · LeviDisplay", "İkitelli OSB, İstanbul. POSM ve retail display standları üreten fabrika. FMCG markaları için stand ve ünite tasarımı, 3D sunum, üretim dosyası, CNC ve plotter verisi ile UV, DTF ve offset baskı hazırlığı.": "Ikitelli OSB, Istanbul. A factory producing POSM and retail display stands. Stand and unit design for FMCG brands, 3D presentation, production files, CNC and plotter data, and UV, DTF and offset print preparation.", "NİS – HAZ 2023": "APR – JUN 2023", "Marla Mimarlık ve İnşaat": "Marla Architecture and Construction", "Zorunlu staj. Müşteri briefini tek sayfaya indirip tasarım ekibine aktardım, Rhinoceros'ta modelleme ve kesit alma işlerinde çalıştım.": "Mandatory internship. I condensed the client brief into one page for the design team and worked on modeling and sectioning in Rhinoceros.", "EKİ 2022 – OCA 2023": "OCT 2022 – JAN 2023", "Zorunlu staj. Biyolojik olarak parçalanabilen malzemelerle ürün ve kalıp tasarımı yapan ekipte çalıştım, 3D yazıcı baskı süreçlerini uyguladım.": "Mandatory internship. I worked in a team designing products and molds with biodegradable materials and carried out 3D printing processes.", "HAZ – EYL 2022": "JUN – SEP 2022", "Gönüllü staj. Müşteri briefini tek sayfalık briefe çevirdim, test sürecini raporladım, ürün sunumu ekibinde yer aldım.": "Voluntary internship. I turned the client brief into a one-page brief, reported on the testing process, and took part in the product presentation team.", "2026 – DEVAM EDİYOR": "2026 – ONGOING", "Anadolu Üniversitesi": "Anadolu University", "Açıköğretim Fakültesi, Yapay Zekâ Destekli Kodlama önlisans programı.": "Open Education Faculty, AI-Assisted Coding associate degree program.", "İstanbul Aydın Üniversitesi": "Istanbul Aydın University", "Endüstriyel Tasarım lisansı, Mimarlık ve Tasarım Fakültesi. Not ortalaması 3,34 / 4,00.": "Bachelor's degree in Industrial Design, Faculty of Architecture and Design. GPA 3.34 / 4.00.", "İstanbul Aydın Üniversitesi Endüstriyel Tasarım bölümünden 2024'te mezun oldum. Bugün tasarımın yanında üretim tarafını da yürütüyorum: dosyayı hazırlıyor, malzemeyi seçiyor, baskıya ve kesime gidecek veriyi çıkarıyorum.": "I graduated from Istanbul Aydın University's Industrial Design department in 2024. Today, alongside design, I also run the production side: I prepare files, choose materials, and produce the data that goes to print and cutting.", "Tasarım ve modelleme": "Design and modeling", "Grafik ve sunum": "Graphics and presentation", "Üretim": "Production", "Üretim dosyası hazırlama": "Production file preparation", "CNC ve plotter verisi": "CNC and plotter data", "UV baskı": "UV printing", "DTF baskı": "DTF printing", "Offset baskı": "Offset printing", "MDF, pleksi, akrilik, PETG, alüminyum, karton": "MDF, plexiglass, acrylic, PETG, aluminum, cardboard", "LeviDisplay · markaya göre gruplu · tıklayınca galeri açılır": "LeviDisplay · grouped by brand · click to open the gallery", "Öne çıkan işler": "Featured work", "Markalara göre tüm işler": "All work by brand", "← Tüm markalar": "← All brands", "Lisans dönemi · konsept çalışmalar": "Undergraduate years · concept projects", "Aydınlatma tasarımları · dört malzeme, dört form": "Lighting designs · four materials, four forms", "Birlikte bir iş çıkaralım.": "Let's make something together.", "E-posta": "Email", "Telefon": "Phone", "Kopyala": "Copy", "© 2026 Bahtiyar Egemen Göçer. Marka adları ve görseller ilgili firmalara aittir; çalışmalar LeviDisplay'de tasarlanmıştır.": "© 2026 Bahtiyar Egemen Göçer. Brand names and images belong to their respective companies; the work was designed at LeviDisplay.", "Kapat": "Close"}, EN_TAG = {"Ayaklı stand": "Floor stand", "Masaüstü stand": "Countertop stand", "Gondol": "Gondola", "Raf önü": "Shelf edge", "Asma": "Hanging", "Wobbler": "Wobbler", "Soğutucu içi": "In-cooler", "Palet": "Pallet", "Kutu": "Box", "Özel üretim": "Custom production", "Ev bakım": "Home care", "Gıda": "Food", "Kişisel bakım": "Personal care", "Pet": "Pet", "Sağlık": "Health", "Temizlik": "Cleaning", "Çikolata": "Chocolate", "İçecek": "Beverage", "Şekerleme": "Confectionery", "Bebek maması": "Infant formula", "Kahve": "Coffee", "Menülük": "Menu holder", "Otonom tarım aracı": "Autonomous farming vehicle", "Acil durum iletişim istasyonu": "Emergency communication station", "Denizaltı aracı": "Submarine", "Aydınlatma": "Lighting", "plastik": "plastic", "kumaş": "fabric", "metal": "metal", "3D baskı": "3D printed"}, EN_DESC = {"Ahşap kaideli ve pleksi menülük.": "Menu holders with a wooden base and in acrylic.", "Altıgen gövdeli, dönen raflı kule stand. Malzeme: MDF, UV baskı.": "Tower stand with a hexagonal body and rotating shelves. Material: MDF, UV print.", "Aynı brief için iki farklı yapısal çözüm sunulan, UV baskılı stand. Malzeme: MDF gövde, UV baskı.": "UV-printed stand with two different structural solutions for the same brief. Material: MDF body, UV print.", "Aynı kampanya için kurgulanmış, farklı raf sayısı ve taban çözümlerine sahip stand ailesi.": "A stand family built for one campaign, with different shelf counts and base solutions.", "Aynı kimlik için üç renk ve üç gözlü yapı, tezgâh düzenleyici kutular.": "Countertop organizer boxes in three colors and three compartments for the same identity.", "Basamaklı raf ünitesi. Malzeme: MDF, UV baskı.": "Stepped shelf unit. Material: MDF, UV print.", "Basamaklı tabanlı, panelli küçük ünite.": "Small unit with a stepped base and a graphic panel.", "Basamaklı ve pleksi bölmeli tezgâh üstü üniteler.": "Stepped countertop units with acrylic compartments.", "Basamaklı üç kademeli ünite.": "Three-tier stepped unit.", "Beyaz gövde ve altın detaylı, raf içleri ürün formuna uyarlanmış stand serisi.": "A stand series with white bodies and gold details, with shelf interiors shaped to the product form.", "Dairesel wobbler ve panel uygulaması.": "Circular wobbler and panel application.", "Dalga, halka ve panel formlarında; dağıtıcı ve menülük dahil tezgâh üstü çözümler. Malzeme: MDF, PETG, UV baskı.": "Countertop solutions in wave, ring and panel forms, including a dispenser and a menu holder. Material: MDF, PETG, UV print.", "Dönen küp raflı, karakterli küçük ünite.": "Small unit with rotating cube shelves and characters.", "Dört yüzlü palet ünitesi ve tekerlekli sepet ünitesi. Malzeme: karton ve metal, offset baskı.": "Four-sided pallet unit and a wheeled basket unit. Material: cardboard and metal, offset print.", "Kampanya mesajını taşıyan masaüstü panel.": "Countertop panel carrying the campaign message.", "Kapaklı hediye kutusu, içinde ürün ve oyuncak kombinasyonu.": "Hinged-lid gift box combining product and toy.", "Kavisli siyah gövdeli, kademeli kutu standı.": "Tiered box stand with a curved black body.", "Koyu gövde ve kademeli raflarla premium algı yaratan ürün standı. Malzeme: MDF gövde, UV baskı.": "Product stand that creates a premium feel with a dark body and tiered shelves. Material: MDF body, UV print.", "Kule stand, iki farklı taban çözümüyle. Malzeme: MDF, UV baskı.": "Tower stand with two different base solutions. Material: MDF, UV print.", "Kutu formlu, görsel panelli tezgâh ünitesi.": "Box-shaped countertop unit with a graphic panel.", "Kırmızı gövdeli, eğik cepli kahve standı.": "Coffee stand with a red body and angled pockets.", "Mor raflı, yan bilgi panelli ayaklı stand.": "Floor stand with purple shelves and a side information panel.", "Pleksi gövdeli kasa önü ve sütun askılı ürün ünitesi.": "Acrylic-body checkout unit and a column-hung product unit.", "Raf açıklığını çerçeveleyen köşe elemanları.": "Corner elements that frame the shelf opening.", "Raf kenarında ürün sınırını belirleyen şeritler ve raf sırtı uygulaması.": "Strips that define the product boundary at the shelf edge, and a shelf-back application.", "Raf çıtasına geçen dairesel wobbler.": "Circular wobbler that clips onto the shelf rail.", "Raf çıtasına takılan çengelli wobbler ve asma şerit.": "Hooked wobbler and hanging strip attached to the shelf rail.", "Rafın kenarına oturan, ürünle bütünleşen şerit ve çerçeve çözümleri.": "Strip and frame solutions that sit on the shelf edge and blend with the product.", "Siyah platformlu, görsel panelli masaüstü ünite. Malzeme: MDF, UV baskı.": "Countertop unit with a black platform and a graphic panel. Material: MDF, UV print.", "Soğutucu kapısı ve raflarında şişe grubunu öne çıkaran çerçeve, şerit ve cam uygulamaları.": "Frame, strip and glass applications that highlight the bottle group on cooler doors and shelves.", "Sıralı raflı ayaklı stand ve renkli versiyonu. Malzeme: MDF, UV baskı.": "Floor stand with tiered shelves and its colored version. Material: MDF, UV print.", "Yarı saydam gövdeli kule stand ve pleksi raflı stand.": "Tower stand with a translucent body and a stand with acrylic shelves.", "Yeşil çerçeveli, kampanya başlıklı raf standı.": "Shelf stand with a green frame and a campaign header.", "Çengelli raf yapısıyla ürün sayısını artıran stand.": "Stand that increases product capacity with a hooked shelf structure.", "Çok katlı, ölçek figürlü stand. Malzeme: MDF, UV baskı.": "Multi-tier stand with a scale figure. Material: MDF, UV print.", "Çorba kategorisini markanın yeşil kimliğiyle raf önünde ayrıştıran, iki alternatifli stand. Malzeme: MDF gövde, UV baskı.": "Stand with two alternatives that sets the soup category apart at the shelf edge with the brand's green identity. Material: MDF body, UV print.", "Ürün kutusu formlu ve dairesel wobbler çözümleri.": "Product-box-shaped and circular wobbler solutions.", "Ürün kutusuna uyumlu, çerçeveli tezgâh üstü ünite. Malzeme: MDF, UV baskı.": "Framed countertop unit matched to the product box. Material: MDF, UV print.", "Ürün silüetini üst panele taşıyarak markayı uzaktan okunur kılan stand. Malzeme: MDF, UV baskı.": "Stand that carries the product silhouette onto the top panel, making the brand readable from afar. Material: MDF, UV print.", "Ürün yığınını taşıyan, dört yüzü grafikli palet kutuları.": "Pallet boxes carrying a stack of product, with graphics on all four sides.", "Ürün şişesinin silüetinden türetilmiş raf standı ve kampanya panelli stand ailesi. Malzeme: MDF, UV baskı.": "Shelf stand derived from the product bottle silhouette, and a stand family with a campaign panel. Material: MDF, UV print.", "Ürünü öne taşıyan eğimli raf önü şeridi.": "Angled shelf-edge strip that brings the product forward.", "Ürünün kendi formunu standa dönüştüren şişe silüeti.": "Bottle silhouette that turns the product's own form into a stand.", "Üç farklı kesimli, kendinden kaideli ürün ünitesi.": "Self-standing product units with three different cuts.", "Üç farklı ürün serisi için pembe ve mavi renk kodlu, eğimli raflı stand ailesi.": "Angled-shelf stand family color-coded in pink and blue for three product lines.", "Şişe silüetini taşıyan ketçap standı ve sos kavanozları için sütun stand ailesi.": "Ketchup stand carrying the bottle silhouette and a column stand family for sauce jars.", "Toprağın tuzluluk ve sıcaklığını analiz edip havalandıran, sulayan ve sıvı gübreleyen otonom araç.": "Autonomous vehicle that analyzes soil salinity and temperature, then aerates, irrigates and applies liquid fertilizer.", "Deprem sonrası römorkla taşınan, şarj ve görüntülü iletişim sağlayan konteyner.": "Trailer-towed container for post-earthquake use, providing charging and video communication.", "Dalgıç gücünün yetmediği işlerde çalışan, otonom olmayan denizaltı konsepti.": "Non-autonomous submarine concept for jobs beyond what divers can handle.", "Yumuşak hatlı, tek parça plastik sarkıt.": "Soft-lined, single-piece plastic pendant.", "Dilimli kumaş yüzeyli küre sarkıt.": "Spherical pendant with a sliced fabric surface.", "Dalgalı profilli, lineer metal armatür.": "Linear metal luminaire with a wavy profile.", "Katmanlı, ince lamelli 3D baskı sarkıt.": "Layered, thin-lamella 3D-printed pendant."}, EN_CAP = {"Ahşap kaideli menülük": "Menu holder with wooden base", "Alternatif 1": "Alternative 1", "Alternatif 2": "Alternative 2", "Asma şerit": "Hanging strip", "Asma şerit, detay": "Hanging strip, detail", "Ayaklı stand": "Floor stand", "Ayaklı stand, detay": "Floor stand, detail", "Ayaklı stand, ön ve yan": "Floor stand, front and side", "Basamaklı pleksi ünite": "Stepped acrylic unit", "Basamaklı stand": "Stepped stand", "Basamaklı ünite": "Stepped unit", "Beyaz organizer": "White organizer", "Bordo kutu": "Burgundy box", "Bölmeli kutu": "Compartment box", "Dairesel işaret": "Circular sign", "Dalga formlu ünite": "Wave-shaped unit", "Dağıtıcı stand": "Dispenser stand", "Dağıtıcı stand, detay": "Dispenser stand, detail", "Dikey panel": "Vertical panel", "Dört raflı eğimli stand": "Four-shelf angled stand", "Eğik şişe rafı": "Angled bottle shelf", "Eğimli pleksi ünite": "Angled acrylic unit", "Eğimli raflı stand": "Angled-shelf stand", "Eğimli tezgâh ünitesi": "Angled countertop unit", "Gondol uygulaması": "Gondola application", "Gondol çerçevesi": "Gondola frame", "Gondol, ikinci kat": "Gondola, second tier", "Halka formlu kutu standı": "Ring-shaped can stand", "Hediye kutusu": "Gift box", "Kapı içi grafik": "Door graphic", "Kavisli panel": "Curved panel", "Kule stand": "Tower stand", "Kule stand, iç yapı": "Tower stand, inner structure", "Küp raflı ünite": "Cube-shelf unit", "Kısa versiyon": "Short version", "Masaüstü panel": "Countertop panel", "Masaüstü stand": "Countertop stand", "Masaüstü ünite": "Countertop unit", "Palet kutusu": "Pallet box", "Palet ünitesi": "Pallet unit", "Panel": "Panel", "Panelli kutu standı": "Paneled can stand", "Panelli stand ailesi": "Paneled stand family", "Panolu stand": "Stand with display board", "Pleksi bölmeli ünite": "Acrylic compartment unit", "Pleksi menülük": "Acrylic menu holder", "Pleksi raflı stand": "Acrylic-shelf stand", "Pleksi tezgâh ünitesi": "Acrylic countertop unit", "Profesyonel seri": "Professional series", "Raf arkası grafik": "Shelf-back graphic", "Raf işareti": "Shelf marker", "Raf önü": "Shelf edge", "Raf önü şerit": "Shelf-edge strip", "Raflı stand": "Shelf stand", "Renkli versiyon": "Colored version", "Sepet ünitesi": "Basket unit", "Siyah organizer": "Black organizer", "Sütun stand": "Column stand", "Sütun stand, ön ve arka": "Column stand, front and back", "Sütun ünitesi": "Column unit", "Taban çözümü 1": "Base solution 1", "Taban çözümü 2": "Base solution 2", "Tekli raf aparatı": "Single shelf accessory", "Tepe panelli stand": "Stand with top panel", "Wobbler": "Wobbler", "Wobbler 2": "Wobbler 2", "Yan görünüm": "Side view", "Yeşil palet kutusu": "Green pallet box", "Çerçeve": "Frame", "Çerçeve ve başlık": "Frame and header", "Çerçeveli raf": "Framed shelf", "Çift katlı ünite": "Two-tier unit", "Ön görünüm": "Front view", "Üç raflı stand": "Three-shelf stand", "Üç raflı versiyon": "Three-shelf version", "Üç ürünlü şerit": "Three-product strip", "Şerit uygulama": "Strip application", "Şişe formlu ayaklı stand": "Bottle-shaped floor stand", "Şişe formlu stand": "Bottle-shaped stand", "Final render": "Final render", "Proje sayfası": "Project page", "Yakın plan": "Close-up", "Masa üstü ortamında": "On a desk"};
+var EN_UI = { cover: 'cover image', img: 'IMAGES', types: 'stand types', copied: 'Copied', copy: 'Copy' };
+var TR_UI = { cover: 'kapak görseli', img: 'GÖRSEL', types: 'stand tipi', copied: 'Kopyalandı', copy: 'Kopyala' };
+function UI(k) { var t = (LANG === 'en' ? EN_UI : TR_UI) || { cover: 'kapak görseli', img: 'GÖRSEL', types: 'stand tipi', copied: 'Kopyalandı', copy: 'Kopyala' }; return t[k]; }
+function tTag(s) { return LANG !== 'en' ? s : s.split(' · ').map(function (x) { return EN_TAG[x] || x; }).join(' · '); }
+function tDesc(s) { return LANG !== 'en' ? s : (EN_DESC[s] || s); }
+function tCap(s) {
+  if (LANG !== 'en') return s;
+  var i = s.indexOf(' · ');
+  return i < 0 ? (EN_CAP[s] || s) : s.slice(0, i) + ' · ' + (EN_CAP[s.slice(i + 3)] || s.slice(i + 3));
+}
+function applyStatic() {
+  var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null), n;
+  while ((n = w.nextNode())) {
+    var p = n.parentNode; if (!p || /^(SCRIPT|STYLE)$/.test(p.nodeName)) continue;
+    if (n._tr === undefined) n._tr = n.nodeValue;
+    var t = n._tr.trim(); if (!t) continue;
+    var en = EN_STR[t];
+    if (!en && t.indexOf('ÇALIŞILAN MARKALAR') === 0) en = t.replace('ÇALIŞILAN MARKALAR', 'BRANDS WORKED WITH');
+    n.nodeValue = (LANG === 'en' && en) ? n._tr.replace(t, en) : n._tr;
+  }
+  var A = [['.logo', 'aria-label', 'BEG, sayfa başı', 'BEG, back to top'], ['header nav', 'aria-label', 'Bölümler', 'Sections'], ['#lb', 'aria-label', 'Proje galerisi', 'Project gallery'], ['#lbPrev', 'aria-label', 'Önceki görsel', 'Previous image'], ['#lbNext', 'aria-label', 'Sonraki görsel', 'Next image']];
+  A.forEach(function (a) { var e = document.querySelector(a[0]); if (e) e.setAttribute(a[1], LANG === 'en' ? a[3] : a[2]); });
+  document.title = LANG === 'en' ? 'Egemen Göçer Portfolio' : 'Egemen Göçer Portfolyo';
+  document.documentElement.lang = LANG;
+  var lb = document.getElementById('langBtn'); if (lb) lb.textContent = LANG === 'en' ? 'TR' : 'EN';
+}
+function renderCats() {
+  catsEl.innerHTML = BRANDS.map(function (n) {
+    var l = brandWorks(n), k = l.reduce(function (s, w) { return s + w.imgs.length; }, 0);
+    return '<button type="button" class="cat" data-c="' + encodeURIComponent(n) + '"><img src="' + l[0].imgs[0][0] + '" alt="" loading="lazy"><span class="t"><b>' + esc(n) + '</b><span>' + k + ' ' + UI('img') + '</span></span></button>';
+  }).join('');
+}
+function setLang(l) {
+  LANG = l === 'en' ? 'en' : 'tr';
+  try { localStorage.setItem('lang', LANG); } catch (e) {}
+  build(WORK.filter(function (w) { return w.feat; }), document.getElementById('work'), 1);
+  build(STU, document.getElementById('stu'));
+  build(EK, document.getElementById('ek-list'));
+  renderCats(); route(); applyStatic();
+}
+document.getElementById('langBtn').addEventListener('click', function () { setLang(LANG === 'en' ? 'tr' : 'en'); });
+(function () {
+  var q = null, s = null;
+  try { q = new URLSearchParams(location.search).get('lang'); } catch (e) {}
+  try { s = localStorage.getItem('lang'); } catch (e) {}
+  var nav = (navigator.language || 'tr').toLowerCase();
+  var l = (q === 'en' || q === 'tr') ? q : (s === 'en' || s === 'tr') ? s : (nav.indexOf('tr') === 0 ? 'tr' : 'en');
+  if (l === 'en') setLang('en'); else applyStatic();
+})();
 </script>
 
 </body>
